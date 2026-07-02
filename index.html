@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lite Browser — лёгкий и стильный</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0c0c0c;
+            --surface: #1a1a1a;
+            --surface-light: #252525;
+            --accent: #00e68a;
+            --accent-glow: rgba(0, 230, 138, 0.3);
+            --text: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #2a2a2a;
+            --radius: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Анимированный градиентный фон */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 230, 138, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Шапка */
+        header {
+            padding: 2rem 2rem 1rem;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--accent), #00b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        /* Основной контейнер */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .tab-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #0c0c0c;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        /* Панели вкладок */
+        .tab-panel {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Секция с картинками */
+        .gallery-container {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .gallery {
+            display: flex;
+            overflow: hidden;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            position: relative;
+            min-height: 400px;
+        }
+
+        .slide {
+            min-width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .slide img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            background: var(--surface-light);
+            transition: transform 0.3s ease;
+        }
+
+        .slide img:hover {
+            transform: scale(1.02);
+        }
+
+        /* Кнопки управления слайдером */
+        .slider-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .slider-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .slider-btn:hover {
+            background: var(--accent);
+            color: #0c0c0c;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Карточка скачивания */
+        .download-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            text-align: center;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .download-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 230, 138, 0.1);
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--accent);
+            color: #0c0c0c;
+            font-weight: 700;
+            font-size: 1.3rem;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: 0 5px 20px var(--accent-glow);
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            background: #00ff9d;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+
+        .version {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Кнопка Support */
+        .support-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .support-btn {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .support-btn:hover {
+            background: var(--accent);
+            color: #0c0c0c;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Почта */
+        .error-section {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .email-link {
+            color: var(--accent);
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: var(--transition);
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            background: rgba(0, 230, 138, 0.1);
+        }
+
+        .email-link:hover {
+            background: rgba(0, 230, 138, 0.2);
+            text-decoration: underline;
+        }
+
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+            .tabs {
+                gap: 0.5rem;
+            }
+            .tab-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Индикатор точек слайдера */
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <header>
+        <h1 class="logo">Lite Browser</h1>
+        <p class="tagline">Лёгкий, быстрый и стильный браузер для Android. Ничего лишнего.</p>
+    </header>
+
+    <div class="container">
+        <!-- Вкладки -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('gallery')">📸 Галерея</button>
+            <button class="tab-btn" onclick="openTab('error')">🐛 Нашли ошибку?</button>
+        </div>
+
+        <!-- Галерея -->
+        <div id="gallery" class="tab-panel active">
+            <div class="gallery-container">
+                <div class="gallery" id="gallerySlider">
+                    <div class="slide">
+                        <img src="phota1.png" alt="Скриншот браузера 1" loading="lazy">
+                    </div>
+                    <div class="slide">
+                        <img src="phota2.png" alt="Скриншот браузера 2" loading="lazy">
+                    </div>
+                </div>
+                <div class="dots" id="dotsContainer"></div>
+                <div class="slider-controls">
+                    <button class="slider-btn" onclick="prevSlide()" aria-label="Предыдущий слайд">←</button>
+                    <button class="slider-btn" onclick="nextSlide()" aria-label="Следующий слайд">→</button>
+                </div>
+            </div>
+
+            <!-- Скачивание -->
+            <div class="download-card">
+                <a href="https://disk.yandex.ru/d/jeQyzCa88yeswg" class="download-btn" target="_blank" rel="noopener">
+                    📥 Скачать .apk
+                </a>
+                <p class="version">Версия 1.0.0 • 12 МБ</p>
+            </div>
+
+            <!-- Поддержка -->
+            <div class="support-section">
+                <button class="support-btn" onclick="alert('Спасибо за поддержку! Пока что ссылка не готова, но я обязательно добавлю её позже.')">
+                    ❤️ Support me!
+                </button>
+            </div>
+        </div>
+
+        <!-- Ошибки -->
+        <div id="error" class="tab-panel">
+            <div class="error-section">
+                <h2 style="color: var(--accent); margin-bottom: 1rem;">Нашли баг или есть предложение?</h2>
+                <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Напишите мне на почту, и я обязательно отвечу!</p>
+                <a href="mailto:litelabssupport@gmail.com" class="email-link">
+                    📧 litelabssupport@gmail.com
+                </a>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                    Это официальный адрес поддержки Lite Browser.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Переключение вкладок
+        function openTab(tabName) {
+            // Деактивируем все панели
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            // Активируем выбранную
+            document.getElementById(tabName).classList.add('active');
+            
+            // Обновляем кнопки
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Слайдер
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.getElementById('dotsContainer');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        // Создаём точки
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => goToSlide(i));
+            dotsContainer.appendChild(dot);
+        }
+
+        const dots = document.querySelectorAll('.dot');
+
+        function updateSlider() {
+            const offset = -currentSlide * 100;
+            document.getElementById('gallerySlider').style.transform = `translateX(${offset}%)`;
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateSlider();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateSlider();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+        }
+
+        // Автоматическое перелистывание (опционально, можно убрать)
+        setInterval(nextSlide, 5000);
+
+        // Обработка кнопки "Support me!"
+        document.querySelector('.support-btn')?.addEventListener('click', function() {
+            alert('Спасибо за поддержку! Пока что ссылка не готова, но я обязательно добавлю её позже.');
+        });
+    </script>
+</body>
+</html>
