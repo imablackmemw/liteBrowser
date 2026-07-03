@@ -1,465 +1,505 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta name="google-site-verification" content="Apib7-x98H0j5cPqHWwSMm6dNU4GmODRoqxLiDzdx9I" />
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lite Browser — лёгкий и стильный</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>liteBrowser — Перерождение</title>
     <style>
+        /* ========== ГЛОБАЛЬНЫЕ СТИЛИ ========== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --bg: #0c0c0c;
-            --surface: #1a1a1a;
-            --surface-light: #252525;
-            --accent: #00e68a;
-            --accent-glow: rgba(0, 230, 138, 0.3);
-            --text: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --border: #2a2a2a;
-            --radius: 20px;
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #ffffff;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
 
-        /* Анимированный градиентный фон */
-        .bg-animation {
+        body.dark {
+            background-color: #000000;
+        }
+
+        /* ========== SVG ФИЛЬТР ДЛЯ ИСКАЖЕНИЙ (хакерский стиль) ========== */
+        .distortion-text {
+            filter: url(#glitchFilter);
+            animation: distortionAnim 0.3s infinite alternate;
+        }
+
+        @keyframes distortionAnim {
+            0% { filter: url(#glitchFilter); }
+            100% { filter: none; }
+        }
+
+        /* ========== ЧАСТИЦЫ (Canvas) ========== */
+        #particleCanvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 230, 138, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ========== ОСНОВНОЙ КОНТЕНТ ========== */
+        #content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* ========== ФАЗА 1 ========== */
+        .phase {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.8s ease;
+        }
+
+        .phase.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .phase.inactive {
+            opacity: 0;
             pointer-events: none;
         }
 
-        /* Шапка */
-        header {
-            padding: 2rem 2rem 1rem;
-            text-align: center;
-        }
-
-        .logo {
-            font-size: 3.5rem;
-            font-weight: 800;
+        #phase1 .main-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            color: #000;
             letter-spacing: -1px;
-            background: linear-gradient(135deg, var(--accent), #00b8ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-            animation: fadeInUp 0.8s ease-out;
+            transition: color 3s ease;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
-        .tagline {
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin: 0 auto 2rem;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
-        }
-
-        /* Основной контейнер */
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-
-        /* Вкладки */
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            animation: fadeInUp 0.8s ease-out 0.3s both;
-        }
-
-        .tab-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: var(--transition);
-            backdrop-filter: blur(10px);
-        }
-
-        .tab-btn.active {
-            background: var(--accent);
-            color: #0c0c0c;
-            border-color: var(--accent);
-            box-shadow: 0 0 20px var(--accent-glow);
-        }
-
-        .tab-btn:hover {
-            border-color: var(--accent);
-            color: var(--text);
-        }
-
-        /* Панели вкладок */
-        .tab-panel {
-            display: none;
-            animation: fadeInUp 0.5s ease-out;
-        }
-
-        .tab-panel.active {
-            display: block;
-        }
-
-        /* Секция с картинками */
-        .gallery-container {
-            position: relative;
-            margin-bottom: 3rem;
-        }
-
-        .gallery {
-            display: flex;
-            overflow: hidden;
-            border-radius: var(--radius);
-            background: var(--surface);
-            border: 1px solid var(--border);
-            position: relative;
-            min-height: 400px;
-        }
-
-        .slide {
-            min-width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            transition: transform 0.5s ease-in-out;
-        }
-
-        .slide img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            aspect-ratio: 1/1;
-            object-fit: contain;
-            background: var(--surface-light);
-            transition: transform 0.3s ease;
-        }
-
-        .slide img:hover {
-            transform: scale(1.02);
-        }
-
-        /* Кнопки управления слайдером */
-        .slider-controls {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .slider-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-        }
-
-        .slider-btn:hover {
-            background: var(--accent);
-            color: #0c0c0c;
-            border-color: var(--accent);
-            box-shadow: 0 0 20px var(--accent-glow);
-        }
-
-        /* Карточка скачивания */
-        .download-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 2.5rem;
-            text-align: center;
-            margin: 2rem 0;
-            backdrop-filter: blur(10px);
-            transition: var(--transition);
-        }
-
-        .download-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 10px 30px rgba(0, 230, 138, 0.1);
-        }
-
-        .download-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--accent);
-            color: #0c0c0c;
-            font-weight: 700;
-            font-size: 1.3rem;
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: var(--transition);
-            box-shadow: 0 5px 20px var(--accent-glow);
-            border: none;
-            cursor: pointer;
-        }
-
-        .download-btn:hover {
-            background: #00ff9d;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px var(--accent-glow);
-        }
-
-        .version {
-            color: var(--text-secondary);
+        #phase1 .sub-title {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: #555;
             margin-top: 0.5rem;
-            font-size: 0.9rem;
+            font-weight: 400;
+            transition: color 3s ease;
         }
 
-        /* Кнопка Support */
-        .support-section {
-            text-align: center;
-            margin: 2rem 0;
+        body.dark #phase1 .main-title {
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255,255,255,0.3);
         }
 
-        .support-btn {
-            background: transparent;
-            border: 2px solid var(--accent);
-            color: var(--accent);
-            font-weight: 700;
-            font-size: 1.2rem;
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: var(--transition);
+        body.dark #phase1 .sub-title {
+            color: #aaa;
         }
 
-        .support-btn:hover {
-            background: var(--accent);
-            color: #0c0c0c;
-            box-shadow: 0 0 20px var(--accent-glow);
-        }
-
-        /* Почта */
-        .error-section {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .email-link {
-            color: var(--accent);
-            font-weight: 700;
-            text-decoration: none;
-            font-size: 1.2rem;
-            transition: var(--transition);
+        /* ========== ФАЗА 2 ========== */
+        #phase2 .glitch-title {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 900;
+            color: #ff0040;
+            text-shadow: 0 0 30px rgba(255, 0, 64, 0.7);
+            letter-spacing: 2px;
+            position: relative;
             display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            background: rgba(0, 230, 138, 0.1);
         }
 
-        .email-link:hover {
-            background: rgba(0, 230, 138, 0.2);
-            text-decoration: underline;
+        /* Glitch эффект через псевдоэлементы */
+        .glitch-title::before,
+        .glitch-title::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
         }
 
-        /* Анимации */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .glitch-title::before {
+            color: #0ff;
+            z-index: -1;
+            animation: glitch-before 0.3s infinite alternate-reverse;
         }
 
-        /* Адаптивность */
-        @media (max-width: 600px) {
-            .logo {
-                font-size: 2.5rem;
-            }
-            .tabs {
-                gap: 0.5rem;
-            }
-            .tab-btn {
-                padding: 0.6rem 1.2rem;
-                font-size: 0.9rem;
-            }
+        .glitch-title::after {
+            color: #f0f;
+            z-index: -2;
+            animation: glitch-after 0.2s infinite alternate;
         }
 
-        /* Индикатор точек слайдера */
-        .dots {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
+        @keyframes glitch-before {
+            0% { transform: translate(2px, -2px); }
+            25% { transform: translate(-2px, 1px); }
+            50% { transform: translate(1px, 2px); }
+            75% { transform: translate(-1px, -1px); }
+            100% { transform: translate(2px, 0); }
+        }
+
+        @keyframes glitch-after {
+            0% { transform: translate(-2px, 2px); }
+            25% { transform: translate(1px, -1px); }
+            50% { transform: translate(-1px, -2px); }
+            75% { transform: translate(2px, 1px); }
+            100% { transform: translate(-2px, 0); }
+        }
+
+        #endText {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff0040;
             margin-top: 1rem;
+            transition: color 0.1s ease, transform 0.1s ease;
+            text-shadow: 0 0 20px rgba(255,0,64,0.5);
         }
 
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--border);
+        #endText.green {
+            color: #00ff64;
+            text-shadow: 0 0 30px rgba(0,255,100,0.8);
+            transform: scale(1.1);
+        }
+
+        #hint {
+            color: #333;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            letter-spacing: 1px;
+            animation: fadeInHint 2s ease 1s both;
+        }
+
+        @keyframes fadeInHint {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 0.7; transform: translateY(0); }
+        }
+
+        /* Помехи (статический шум) на фоне фазы 2 */
+        #static-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            animation: noiseFade 0.5s ease 4s forwards;
+        }
+
+        @keyframes noiseFade {
+            to { opacity: 1; }
+        }
+
+        /* ========== ФАЗА 3 (ФИНАЛ) ========== */
+        #phase3 {
+            background: radial-gradient(circle, #001a00, #000000);
+        }
+
+        #phase3 .ok-title {
+            font-size: clamp(4rem, 15vw, 10rem);
+            font-weight: 900;
+            color: #00ff64;
+            text-shadow: 0 0 50px rgba(0,255,100,0.8), 0 0 100px rgba(0,255,100,0.5);
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 40px rgba(0,255,100,0.7), 0 0 80px rgba(0,255,100,0.4); }
+            to { text-shadow: 0 0 60px rgba(0,255,100,1), 0 0 120px rgba(0,255,100,0.7); }
+        }
+
+        #phase3 .sub-message {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 1rem 0 2rem;
+            text-shadow: 0 0 30px rgba(255,255,255,0.5);
+        }
+
+        .final-btn {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #000;
+            background: #00ff64;
+            border: none;
+            border-radius: 50px;
             cursor: pointer;
-            transition: var(--transition);
+            text-decoration: none;
+            box-shadow: 0 0 40px rgba(0,255,100,0.6), 0 0 80px rgba(0,255,100,0.3);
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            animation: pulse 1.5s infinite;
+            letter-spacing: 1px;
         }
 
-        .dot.active {
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
+        .final-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 60px rgba(0,255,100,0.9), 0 0 120px rgba(0,255,100,0.5);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 30px rgba(0,255,100,0.5), 0 0 60px rgba(0,255,100,0.3); }
+            50% { box-shadow: 0 0 50px rgba(0,255,100,0.8), 0 0 100px rgba(0,255,100,0.5); }
+            100% { box-shadow: 0 0 30px rgba(0,255,100,0.5), 0 0 60px rgba(0,255,100,0.3); }
+        }
+
+        /* ========== ТРЯСКА ЭКРАНА ========== */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-12px, 6px) rotate(-1.5deg); }
+            20% { transform: translate(14px, -9px) rotate(1.5deg); }
+            30% { transform: translate(-18px, -4px) rotate(-2.5deg); }
+            40% { transform: translate(10px, 12px) rotate(2.5deg); }
+            50% { transform: translate(-6px, -15px) rotate(-2deg); }
+            60% { transform: translate(16px, 3px) rotate(2deg); }
+            70% { transform: translate(-10px, 8px) rotate(-1deg); }
+            80% { transform: translate(8px, -12px) rotate(1deg); }
+            90% { transform: translate(-14px, 5px) rotate(-1.5deg); }
+        }
+
+        .shake {
+            animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Вспышка */
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            pointer-events: none;
+            animation: flashAnim 0.8s ease-out forwards;
+        }
+
+        @keyframes flashAnim {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ========== SVG FILTER для искажения текста (хакерский) ========== */
+        #glitchFilter feTurbulence {
+            /* будет задано в атрибутах */
         }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
 
-    <header>
-        <img src="logo.png" alt="Lite Browser" class="logo">
-        <p class="tagline">Лёгкий, быстрый и стильный браузер для Android. Ничего лишнего.</p>
-    </header>
+    <!-- SVG фильтры для искажения (хакерский стиль) -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <filter id="glitchFilter" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.15 0.02" numOctaves="1" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
 
-    <div class="container">
-        <!-- Вкладки -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('gallery')">📸 Галерея</button>
-            <button class="tab-btn" onclick="openTab('error')">🐛 Нашли ошибку?</button>
+    <!-- Канвас для частиц -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Статический шум (фаза 2) -->
+    <div id="static-noise"></div>
+
+    <!-- Основной контент -->
+    <div id="content">
+        <!-- Фаза 1 -->
+        <div id="phase1" class="phase active">
+            <div class="main-title" id="mainTitle">liteBrowser</div>
+            <div class="sub-title" id="subTitle">Лёгкий. Быстрый. Бесплатный.</div>
         </div>
 
-        <!-- Галерея -->
-        <div id="gallery" class="tab-panel active">
-            <div class="gallery-container">
-                <div class="gallery" id="gallerySlider">
-                    <div class="slide">
-                        <img src="phota1.png" alt="Скриншот браузера 1" loading="lazy">
-                    </div>
-                    <div class="slide">
-                        <img src="phota2.png" alt="Скриншот браузера 2" loading="lazy">
-                    </div>
-                </div>
-                <div class="dots" id="dotsContainer"></div>
-                <div class="slider-controls">
-                    <button class="slider-btn" onclick="prevSlide()" aria-label="Предыдущий слайд">←</button>
-                    <button class="slider-btn" onclick="nextSlide()" aria-label="Следующий слайд">→</button>
-                </div>
-            </div>
-
-            <!-- Скачивание -->
-            <div class="download-card">
-                <a href="https://disk.yandex.ru/d/jeQyzCa88yeswg" class="download-btn" target="_blank" rel="noopener">
-                    📥 Скачать .apk
-                </a>
-                <p class="version">Версия 1.0.0 • 12 МБ</p>
-            </div>
-
-            <!-- Поддержка -->
-            <div class="support-section">
-                <button class="support-btn" onclick="alert('Спасибо за поддержку! Пока что ссылка не готова, но я обязательно добавлю её позже.')">
-                    ❤️ Support me!
-                </button>
-            </div>
+        <!-- Фаза 2 -->
+        <div id="phase2" class="phase">
+            <div class="glitch-title" data-text="404 Not found...">404 Not found...</div>
+            <div id="endText">Это конец...</div>
+            <div id="hint">(НАЖИМАЙ 5 РАЗ!)</div>
         </div>
 
-        <!-- Ошибки -->
-        <div id="error" class="tab-panel">
-            <div class="error-section">
-                <h2 style="color: var(--accent); margin-bottom: 1rem;">Нашли баг или есть предложение?</h2>
-                <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Напишите мне на почту, и я обязательно отвечу!</p>
-                <a href="mailto:litelabssupport@gmail.com" class="email-link">
-                    📧 litelabssupport@gmail.com
-                </a>
-                <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
-                    Это официальный адрес поддержки Lite Browser.
-                </p>
-            </div>
+        <!-- Фаза 3 -->
+        <div id="phase3" class="phase">
+            <div class="ok-title">200 OK</div>
+            <div class="sub-message">ЭТО НЕ КОНЕЦ!</div>
+            <a href="https://imablackmemw.github.io/fluid" class="final-btn" target="_blank">НАЖМИ СЮДА!</a>
         </div>
     </div>
 
     <script>
-        // Переключение вкладок
-        function openTab(tabName) {
-            // Деактивируем все панели
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            // Активируем выбранную
-            document.getElementById(tabName).classList.add('active');
-            
-            // Обновляем кнопки
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        }
+        (function() {
+            // ========== СИСТЕМА ЧАСТИЦ (Canvas) ==========
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let animationId;
 
-        // Слайдер
-        const slides = document.querySelectorAll('.slide');
-        const dotsContainer = document.getElementById('dotsContainer');
-        let currentSlide = 0;
-        const totalSlides = slides.length;
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
 
-        // Создаём точки
-        for (let i = 0; i < totalSlides; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'dot' + (i === 0 ? ' active' : '');
-            dot.addEventListener('click', () => goToSlide(i));
-            dotsContainer.appendChild(dot);
-        }
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 3 + 1;
+                    this.speedX = (Math.random() - 0.5) * 1.5;
+                    this.speedY = (Math.random() - 0.5) * 1.5;
+                    this.opacity = Math.random() * 0.7 + 0.3;
+                    this.fade = Math.random() * 0.02 + 0.005;
+                }
+                update(darkMode) {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    // Мерцание
+                    if (darkMode) {
+                        this.opacity += this.fade;
+                        if (this.opacity >= 0.9 || this.opacity <= 0.2) this.fade *= -1;
+                    }
+                    // Границы
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                }
+                draw(ctx, darkMode) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    const color = darkMode ? `rgba(255, 255, 255, ${this.opacity})` : `rgba(0, 0, 0, ${this.opacity * 0.3})`;
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                }
+            }
 
-        const dots = document.querySelectorAll('.dot');
+            // Создаем частицы
+            for (let i = 0; i < 120; i++) {
+                particles.push(new Particle());
+            }
 
-        function updateSlider() {
-            const offset = -currentSlide * 100;
-            document.getElementById('gallerySlider').style.transform = `translateX(${offset}%)`;
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlide);
-            });
-        }
+            let isDarkMode = false; // будет переключаться
 
-        function nextSlide() {
-            currentSlide = (currentSlide + 1) % totalSlides;
-            updateSlider();
-        }
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const dark = document.body.classList.contains('dark') || document.getElementById('phase3').classList.contains('active');
+                particles.forEach(p => {
+                    p.update(dark);
+                    p.draw(ctx, dark);
+                });
+                animationId = requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
 
-        function prevSlide() {
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-            updateSlider();
-        }
+            // ========== УПРАВЛЕНИЕ ФАЗАМИ ==========
+            const body = document.body;
+            const phase1 = document.getElementById('phase1');
+            const phase2 = document.getElementById('phase2');
+            const phase3 = document.getElementById('phase3');
+            const mainTitle = document.getElementById('mainTitle');
+            const subTitle = document.getElementById('subTitle');
+            const endText = document.getElementById('endText');
+            const hint = document.getElementById('hint');
+            const staticNoise = document.getElementById('static-noise');
 
-        function goToSlide(index) {
-            currentSlide = index;
-            updateSlider();
-        }
+            let currentPhase = 1;
+            let clickCount = 0;
+            let phaseTransitioning = false; // защита от повторных кликов во время перехода
 
-        // Автоматическое перелистывание (опционально, можно убрать)
-        setInterval(nextSlide, 5000);
+            // Функция смены фазы
+            function switchPhase(from, to) {
+                const fromEl = document.getElementById(`phase${from}`);
+                const toEl = document.getElementById(`phase${to}`);
+                fromEl.classList.remove('active');
+                fromEl.classList.add('inactive');
+                toEl.classList.remove('inactive');
+                toEl.classList.add('active');
+                currentPhase = to;
+            }
 
-        // Обработка кнопки "Support me!"
-        document.querySelector('.support-btn')?.addEventListener('click', function() {
-            alert('Спасибо за поддержку! Пока что ссылка не готова, но я обязательно добавлю её позже.');
-        });
+            // Таймер на 4 секунды для перехода к фазе 2
+            setTimeout(() => {
+                // Плавное затемнение фона (уже через transition)
+                body.classList.add('dark');
+                // Ждем окончания перехода фона (3s), но текст меняем раньше
+                setTimeout(() => {
+                    switchPhase(1, 2);
+                }, 1500); // через полторы секунды затемнения, чтобы текст появился на темном фоне
+            }, 4000);
+
+            // Обработчик кликов для фазы 2
+            function handleClick(e) {
+                if (currentPhase !== 2 || phaseTransitioning) return;
+                // Поддержка тапов и кликов
+                if (e.type === 'touchstart') {
+                    e.preventDefault(); // предотвращаем двойной клик на мобильных
+                }
+
+                clickCount++;
+                // Меняем текст на "Это не конец!" зеленым
+                endText.textContent = 'Это не конец!';
+                endText.classList.add('green');
+
+                // Возвращаем обратно через 300мс
+                setTimeout(() => {
+                    endText.textContent = 'Это конец...';
+                    endText.classList.remove('green');
+                }, 300);
+
+                // Если набрано 5 кликов, запускаем фазу 3
+                if (clickCount === 5) {
+                    phaseTransitioning = true;
+                    // Тряска экрана
+                    body.classList.add('shake');
+                    // Через 0.6s начинаем вспышку
+                    setTimeout(() => {
+                        // Создаем элемент вспышки
+                        const flash = document.createElement('div');
+                        flash.className = 'flash-overlay';
+                        document.body.appendChild(flash);
+
+                        // После вспышки (0.8s) показываем финальный экран
+                        setTimeout(() => {
+                            flash.remove();
+                            body.classList.remove('shake');
+                            switchPhase(2, 3);
+                            // Убираем шум
+                            staticNoise.style.display = 'none';
+                            phaseTransitioning = false;
+                        }, 800);
+                    }, 600);
+                }
+            }
+
+            // Навешиваем слушатели на весь документ (для фазы 2)
+            document.addEventListener('click', handleClick);
+            document.addEventListener('touchstart', handleClick, { passive: false });
+
+            // Дополнительно: можно скрыть шум после перехода к фазе 3
+            // Уже сделано внутри обработчика
+
+        })();
     </script>
 </body>
 </html>
